@@ -1,0 +1,35 @@
+#!/usr/bin/sh
+
+#
+# Copyright (C) 2026, Marko Acres and the Precipice Contributors.
+# This file is part of the Precipice Operating System project.
+# Licensed strictly under the terms of the GNU General Public License 
+# Version 2 ONLY, as specified in the LICENSE file at the root of this 
+# repository.
+#
+# You do NOT have permission to upgrade, modify, or redistribute this 
+# code under any other version of the GPL (such as v3.x or beyond).
+#
+# See precipice/LICENSE for full license.
+#
+
+# This shell script is part of the compile toolchain. It cleans the stage if it is left over, to start again. It must be run from */precipice.
+
+echo "Precipice stage cleanup"
+
+# verify calling directory
+if [ "$(basename "$PWD")" != "precipice" ]
+then
+	echo "Precipice compilation toolchain scripts must be called from the precipice root! Quitting."
+	exit 1
+fi
+
+if [ -d "stage" ]
+then
+	echo "Wiping stage"
+	rm -rf stage
+else
+	echo "No stage to wipe!"
+fi
+
+echo "Pricipice stage cleanup done"

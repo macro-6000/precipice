@@ -1,0 +1,41 @@
+#!/usr/bin/sh
+
+#
+# Copyright (C) 2026, Marko Acres and the Precipice Contributors.
+# This file is part of the Precipice Operating System project.
+# Licensed strictly under the terms of the GNU General Public License 
+# Version 2 ONLY, as specified in the LICENSE file at the root of this 
+# repository.
+#
+# You do NOT have permission to upgrade, modify, or redistribute this 
+# code under any other version of the GPL (such as v3.x or beyond).
+#
+# See precipice/LICENSE for full license.
+#
+
+# This shell script is part of the build toolchain. It creates the staging area. It must be called from */precipice/
+
+echo "Precipice stage setup"
+
+# verify calling directory
+if [ "$(basename "$PWD")" != "precipice" ]
+then
+	echo "Precipice compilation toolchain scripts must be called from the precipice root! Quitting."
+	exit 1
+fi
+
+# ensure the stage isn't already setup
+if [ -d "stage" ]
+then
+	echo "Stage already exists! Run toolchain/stage/clean to wipe. Quitting."
+	exit 1
+fi
+
+# make the stage, and it's filesystem from the skeleton.
+cp -r stage-skeleton stage
+
+# insert musl
+cp -r musl/lib/* stage/lib/
+cp -r musl/include/* stage/include/
+
+echo "Precipice stage setup done"
