@@ -13,7 +13,7 @@
 # See precipice/LICENSE for full license.
 #
 
-# This shell script is part of the compile toolchain. It cleans the stage if it is left over, to start again. It must be run from */precipice.
+# This shell script is part of the build toolchain. It cleans the staging area. It must be called from */precipice/
 
 echo "Precipice stage cleanup"
 
@@ -24,6 +24,7 @@ then
 	exit 1
 fi
 
+# verify stage actually exists, and wipe.
 if [ -d "stage" ]
 then
 	echo "Wiping stage"
