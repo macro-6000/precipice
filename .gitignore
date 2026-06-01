@@ -1,8 +1,11 @@
 # Where linux and musl source sit
 build/*
 
-# Compiled toolchain
-toolchain/*
+# Compiled musl
+musl/*
+
+# Compiled linux
+linux/*
 
 # ALWAYS keep .gitkeep
 !**/.gitkeep
