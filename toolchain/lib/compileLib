@@ -1,0 +1,99 @@
+#!/usr/bin/zsh
+
+#
+# Copyright (C) 2026, Marko Acres and the Precipice Contributors.
+# This file is part of the Precipice Operating System project.
+# Licensed strictly under the terms of the GNU General Public License 
+# Version 2 ONLY, as specified in the LICENSE file at the root of this 
+# repository.
+#
+# You do NOT have permission to upgrade, modify, or redistribute this 
+# code under any other version of the GPL (such as v3.x or beyond).
+#
+# See precipice/LICENSE for full license.
+#
+
+echo "Precipice library compiler"
+
+# verify calling directory
+if [ "$(basename "$PWD")" != "precipice" ]
+then
+	echo "Precipice compilation toolchain scripts must be called from the precipice root! Quitting."
+	exit 1
+fi
+
+# grab library name from the argument
+libName=$1
+
+nEcho() {
+	echo "[$libName] $@"
+}
+
+# check if libName even exists in the source
+if [ ! -d "rootfs-src/lib/$libName" ]
+then
+	nEcho "Library $libName not found in the source"
+	exit 1
+fi
+
+nEcho "Compiling $libName"
+
+# set up unique sandbox for compilation
+sandbox="compileLibSandbox_$libName"
+if [ -d $sandbox ]
+then
+	rm -rf $sandbox
+fi
+
+mkdir $sandbox
+
+# set the source of the lib
+libSrc="rootfs-src/lib/$libName"
+
+# grab the clang command (stores in $clangCompile, from sourced script)
+source toolchain/clang/getClang
+
+# grab header
+cp "$libSrc/${libName}.h" "$sandbox/${libName}.h"
+
+# compile C files
+for cFile in "$libSrc"/*.c
+do
+	#object and base name
+	baseName=$(basename "$cFile")
+	objName="${baseName%.c}.o"
+
+	nEcho "Compiling $baseName"
+	
+	#compile with position independent code. (for shared object)
+	$=clangCompile -fPIC -c "$cFile" -o "$sandbox/$objName" &
+	#ampersand it into the background
+done
+
+#ensure it's done compiling
+wait
+
+# creating static object
+nEcho "Compiling static"
+llvm-ar rcs $sandbox/${libName}.a $sandbox/*.o
+
+# create shared object
+nEcho "Compiling shared"
+$=clangCompile -shared -nostdlib $sandbox/*.o -o $sandbox/${libName}.so
+
+
+# inject all into stage
+nEcho "Injecting into stage"
+nEcho "Header"
+mv "$sandbox/${libName}.h" "stage/include/${libName}.h"
+
+nEcho "Static object"
+mv "$sandbox/${libName}.a" "stage/lib/${libName}.a"
+
+nEcho "Shared object"
+mv "$sandbox/${libName}.so" "stage/lib/${libName}.so"
+
+# clean the sandbox
+rm -rf $sandbox
+
+nEcho "Precipice library compiler done"

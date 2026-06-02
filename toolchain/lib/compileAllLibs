@@ -1,0 +1,86 @@
+#!/usr/bin/zsh
+
+#
+# Copyright (C) 2026, Marko Acres and the Precipice Contributors.
+# This file is part of the Precipice Operating System project.
+# Licensed strictly under the terms of the GNU General Public License 
+# Version 2 ONLY, as specified in the LICENSE file at the root of this 
+# repository.
+#
+# You do NOT have permission to upgrade, modify, or redistribute this 
+# code under any other version of the GPL (such as v3.x or beyond).
+#
+# See precipice/LICENSE for full license.
+#
+
+echo "Precipice recursive library compiler"
+
+# verify calling directory
+if [ "$(basename "$PWD")" != "precipice" ]
+then
+	echo "Precipice compilation toolchain scripts must be called from the precipice root! Quitting."
+	exit 1
+fi
+
+# grab libraries and put them in a list
+libPaths=(rootfs-src/lib/*)
+
+# create a parallel array of pids and names
+pids=()
+names=()
+
+# iterate over and call the compiler tool
+for libPath in $libPaths
+do
+	# grab the raw library name to feed to the compilation tool
+	libName=$(basename "${libPath%/}")
+
+	echo "Triggering compile on $libName"
+	# call the compiler, but put it in the background to multithread
+	toolchain/lib/compileLib $libName &
+	
+	# append the pid and name to appropriate stringlists
+	pids+=($!)
+	names+=($libName)
+done
+
+# list of all errored scripts
+errored=()
+
+# index value
+i=1
+
+# wait for compilation to finish, but with a specialised sequence to detect errors
+for pid in "${pids[@]}"
+do
+	# resolve the name from the parallel array
+	name=$names[$i]
+
+	# wait for the process
+	wait $pid
+
+	# check if the wait failed, and in sucession the library compiler
+	if [ $? -ne 0 ]
+	then
+		echo "!!!LIBRARY: $name FAILED TO COMPILE!!!"
+		errored+=($name)
+	else
+		echo "Compiled $name"
+	fi
+
+	((i++))
+done
+
+if [ $#errored -gt 0 ]
+then
+	echo "Compilation complete !!BUT!! the following libraries failed to compile:"
+	for errored in $errored
+	do
+		echo "$errored"
+	done
+else
+	echo "Compilation complete"
+fi
+
+
+echo "Precipice recursive library compiler done"
